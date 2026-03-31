@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Flow | Next Gen Executor</title>
+    <link rel="icon" type="image/png" href="smile.png">
+    
+    <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&family=Fira+Code:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+
+    <style>
+        :root {
+            --primary: #4d9fff;
+            --primary-glow: rgba(77, 159, 255, 0.3);
+            --bg: #050505;
+            --card-bg: rgba(255, 255, 255, 0.03);
+            --text-main: #ffffff;
+            --text-dim: #a1a1a1;
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; font-family: 'Outfit', sans-serif; scroll-behavior: smooth; }
+        body { background-color: var(--bg); color: var(--text-main); overflow-x: hidden; line-height: 1.6; }
+
+        /* --- Background --- */
+        .background-effects { position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: -1; }
+        .grid-lines {
+            position: absolute; width: 200%; height: 200%;
+            background-image: linear-gradient(rgba(77, 159, 255, 0.05) 1px, transparent 1px), linear-gradient(90deg, rgba(77, 159, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px; transform: perspective(500px) rotateX(60deg); bottom: -50%; left: -50%;
+            mask-image: linear-gradient(to top, rgba(0,0,0,1), transparent);
+        }
+
+        /* --- Navbar (Flow pushed to edge) --- */
+        .navbar { padding: 25px 3%; display: flex; justify-content: center; position: sticky; top: 0; z-index: 100; backdrop-filter: blur(10px); }
+        .nav-container { width: 100%; max-width: 1400px; display: flex; justify-content: space-between; align-items: center; }
+        .nav-brand { display: flex; align-items: center; margin-left: 0; }
+        .brand-text { font-size: 2.2rem; font-weight: 800; background: linear-gradient(to right, #fff, var(--primary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent; letter-spacing: -1px; }
+        .nav-menu { display: flex; gap: 40px; }
+        .nav-item { color: var(--text-dim); text-decoration: none; font-weight: 500; transition: 0.3s; font-size: 1.1rem; }
+        .nav-item:hover { color: var(--primary); }
+
+        /* --- Hero --- */
+        .hero { padding: 80px 5%; display: flex; justify-content: center; min-height: 75vh; align-items: center; }
+        .hero-container { max-width: 1200px; display: grid; grid-template-columns: 1.2fr 1fr; gap: 60px; align-items: center; }
+        .hero-title { font-size: 4.5rem; font-weight: 800; line-height: 1.1; margin-bottom: 25px; }
+        .gradient-text { background: linear-gradient(90deg, var(--primary), #88bdff); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+        .hero-description { color: var(--text-dim); font-size: 1.2rem; margin-bottom: 40px; max-width: 550px; }
+
+        /* --- Button (STABLE TEXT) --- */
+        .btn-primary {
+            background: var(--primary); color: white; border: none; padding: 18px 45px; border-radius: 14px;
+            font-size: 1.1rem; font-weight: 700; cursor: pointer; transition: 0.2s transform cubic-bezier(0.175, 0.885, 0.32, 1.275), 0.2s box-shadow;
+            display: inline-flex; align-items: center; gap: 12px; text-decoration: none; position: relative;
+            box-shadow: 0 4px 15px rgba(77, 159, 255, 0.2);
+        }
+        .btn-primary:hover { transform: translateY(-3px); box-shadow: 0 15px 35px var(--primary-glow); }
+        .btn-primary:active { transform: translateY(0); }
+
+        /* --- Features Section --- */
+        .section-container { max-width: 1200px; margin: 100px auto; padding: 0 5%; }
+        .section-header { text-align: center; margin-bottom: 60px; }
+        .section-header h2 { font-size: 3.2rem; font-weight: 700; margin-bottom: 10px; letter-spacing: -1px; }
+        .section-header p { color: var(--text-dim); font-size: 1.1rem; }
+
+        .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 30px; }
+        .feature-card { background: var(--card-bg); border: 1px solid rgba(255,255,255,0.05); padding: 45px; border-radius: 24px; transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1); position: relative; overflow: hidden; }
+        .feature-card:hover { border-color: var(--primary); transform: translateY(-8px); background: rgba(77, 159, 255, 0.04); }
+        .feature-card i { font-size: 2.8rem; color: var(--primary); margin-bottom: 25px; display: block; }
+        .feature-card h3 { font-size: 1.5rem; margin-bottom: 15px; }
+        .feature-card p { color: var(--text-dim); line-height: 1.7; }
+
+        /* --- Code View --- */
+        .code-preview { background: #0d0d0f; border: 1px solid rgba(255,255,255,0.1); border-radius: 15px; overflow: hidden; box-shadow: 0 30px 60px rgba(0,0,0,0.5); }
+        .preview-header { background: rgba(255,255,255,0.03); padding: 12px 20px; display: flex; align-items: center; gap: 15px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        .window-controls { display: flex; gap: 8px; }
+        .window-controls span { width: 12px; height: 12px; border-radius: 50%; }
+        .preview-editor { padding: 25px; font-family: 'Fira Code', monospace; font-size: 0.95rem; }
+        .code-keyword { color: #c678dd; } .code-string { color: #98c379; } .code-comment { color: #5c6370; }
+
+        @media (max-width: 968px) { .hero-container { grid-template-columns: 1fr; text-align: center; } .hero-description { margin: 0 auto 40px; } .nav-menu { display: none; } .hero-title { font-size: 3rem; } }
+    </style>
+</head>
+<body>
+
+    <div class="background-effects"><div class="grid-lines"></div></div>
+
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-brand"><span class="brand-text">Flow</span></div>
+            <div class="nav-menu">
+                <a href="#features" class="nav-item">Features</a>
+                <a href="#showcase" class="nav-item">Showcase</a>
+            </div>
+        </div>
+    </nav>
+
+    <section class="hero">
+        <div class="hero-container">
+            <div class="hero-content">
+                <h1 class="hero-title">Next Generation <div class="gradient-text">Script Execution</div></h1>
+                <p class="hero-description">The best free external executor. Engineered for speed, designed for stability, and built to bypass the most advanced detections.</p>
+                <button onclick="window.location.href='https://discord.gg/JEzpsUhxaR';" class="btn-primary">
+                    <span>Download Now</span><i class="fas fa-download"></i>
+                </button>
+            </div>
+            <div class="hero-visual">
+                <div class="code-preview">
+                    <div class="preview-header">
+                        <div class="window-controls"><span style="background:#ff5f56"></span><span style="background:#ffbd2e"></span><span style="background:#27c93f"></span></div>
+                        <span style="font-size:0.8rem;color:#666">script.lua</span>
+                    </div>
+                    <div class="preview-editor">
+                        <pre style="color:#d1d1d1"><code><span class="code-comment">-- Flow Initialization</span>
+<span class="code-keyword">local</span> flow = <span class="code-keyword">require</span>(<span class="code-string">"bypass"</span>)
+
+executor.config({
+    bypass = <span class="code-string">"hyperion"</span>,
+    mode = <span class="code-string">"external"</span>
+})
+
+flow:execute(<span class="code-string">"print('Flow Active')"</span>)</code></pre>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <section id="features" class="section-container">
+        <div class="section-header"><h2>Features</h2><p>Experience the peak of performance</p></div>
+        <div class="features-grid">
+            <div class="feature-card">
+                <i class="fas fa-bolt"></i>
+                <h3>Instant Execution</h3>
+                <p>Execute complex scripts with zero latency. Our optimized internal engine handles heavy tasks with ease.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-microchip"></i>
+                <h3>Hyperion Bypass</h3>
+                <p>Stay ahead of the game with our proprietary external bypass technology, updated daily for safety.</p>
+            </div>
+            <div class="feature-card">
+                <i class="fas fa-code"></i>
+                <h3>100% UNC, Level 8</h3>
+                <p>Full environmental support including compatibility across all scripts.</p>
+            </div>
+        </div>
+    </section>
+
+    <section id="showcase" class="section-container">
+        <div class="section-header"><h2>Showcase</h2><p>Visualizing the power of Flow</p></div>
+        <div style="background: var(--card-bg); height: 450px; border-radius: 24px; display:flex; align-items:center; justify-content:center; border: 1px solid rgba(255,255,255,0.08); position: relative;">
+            <i class="fas fa-play-circle" style="font-size: 4rem; color: var(--primary); cursor: pointer; opacity: 0.8;"></i>
+            <p style="position: absolute; bottom: 20px; color: var(--text-dim)">Soon..</p>
+        </div>
+    </section>
+
+    <center style="padding: 80px 20px; opacity: 0.4; border-top: 1px solid rgba(255,255,255,0.05); margin-top: 50px;">
+        <p>© 2026 Flow Executor. All rights reserved.</p>
+    </center>
+
+</body>
+</html>
